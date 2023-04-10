@@ -2,10 +2,12 @@
 //  MockStrings.swift
 //  FetchRecipes
 //
-//  Created by Omar Hegazy on 04/07/2023.
+//  Created by Omar Hegazy on 4/9/23.
 //
 
 import Foundation
+
+// Mock data to be tested in MockAPIService
 
 let categoryString = """
 {

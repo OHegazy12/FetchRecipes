@@ -7,39 +7,46 @@
 
 import Foundation
 
+// Protocol to define the properties of an API resource
 protocol APIResource
 {
-    var scheme: String { get }
-    var path: String { get }
-    var host: String { get }
+    var scheme: String { get }   // URL scheme (http/https)
+    var path: String { get }     // Path to the resource
+    var host: String { get }     // API hostname
 }
 
+// Default implementation of APIResource properties
 extension APIResource
 {
     var scheme: String
     {
-        return "https"
+        return "https"     // Use https by default
     }
     var host: String
     {
-        return "themealdb.com"
+        return "themealdb.com"  // Use TheMealDB API hostname by default
     }
 }
 
+// Protocol to define networking behavior for fetching data
 protocol Networking
 {
+    // Fetch function takes a generic type parameter T that conforms to Decodable
     func fetch<T: Decodable>(_ endpoint: APIResource, completion: @escaping (Result<T, APIError>) -> Void)
 }
 
+// Default implementation of the fetch function
 extension Networking
 {
     func fetch<T: Decodable>(_ endpoint: APIResource, completion: @escaping (Result<T, APIError>) -> Void)
     {
+        // Constructs the URL from endpoint properties
         var urlComponents = URLComponents()
         urlComponents.scheme = endpoint.scheme
         urlComponents.host = endpoint.host
         urlComponents.path = endpoint.path
         
+        // Makes sure the URL is valid
         guard let urlString = urlComponents.url?.description else
         {
             preconditionFailure("Url is not valid")
@@ -49,6 +56,7 @@ extension Networking
             preconditionFailure("Url is not valid")
         }
         
+        // Creates a data task to fetch data from the API
         let task = URLSession.shared.dataTask(with: URLRequest(url: url))
         { data, response, error in
             if let _ =  error
@@ -57,23 +65,26 @@ extension Networking
                 return
             }
             
+            // Check if the response is valid (status code 200)
             guard let response = response as? HTTPURLResponse, response.statusCode == 200 else
             {
                 completion(.failure(.invalidResponse))
                 return
             }
             
+            // Check if data was returned by the API
             guard let data = data else
             {
-                let str = String(decoding: data!, as: UTF8.self)
                 completion(.failure(.invalidData))
                 return
             }
             
+            // Parse data based on endpoint type (lookup vs. other endpoints)
             if endpoint.path.contains("lookup")
             {
                 do
                 {
+                    // Parse the JSON data using the formatResponse function
                     let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String : Any]
                     guard let json = json else
                     {
@@ -93,6 +104,7 @@ extension Networking
             {
                 do
                 {
+                    // Decode the JSON data using the JSONDecoder
                     let decoder = JSONDecoder()
                     let decodedResponse = try decoder.decode(T.self, from: data)
                     completion(.success(decodedResponse))

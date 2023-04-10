@@ -2,7 +2,7 @@
 //  ScreenSize.swift
 //  Recipe Book
 //
-//  Created by Omar Hegazy on 04/07/2023.
+//  Created by Omar Hegazy on 4/7/23.
 //
 
 import Foundation

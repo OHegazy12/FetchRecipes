@@ -2,7 +2,7 @@
 //  RecipeCard.swift
 //  FetchRecipes
 //
-//  Created by Omar Hegazy on 04/07/2023.
+//  Created by Omar Hegazy on 4/9/23.
 //
 
 import Foundation
@@ -10,12 +10,17 @@ import Foundation
 class RecipeCard: ObservableObject
 {
     var network: Networking
+    
+    // Initializes RecipeCard with a networking object
     init(networking: Networking)
     {
         network = networking
     }
     
+    // A published property that holds the fetched recipe
     @Published public var recipe: Recipe = Recipe(name: "Test", instructions: [""], ingredients: ["":""])
+    
+    // Fetches the recipe details via ID
     func fetchDetails(id: String)
     {
         network.fetch(LookupEndpoint(id: id))
@@ -34,7 +39,7 @@ class RecipeCard: ObservableObject
     }
 }
     
-    
+// Represents the lookup endpoint for a recipe
 struct LookupEndpoint: APIResource
 {
     var id: String?
@@ -48,6 +53,7 @@ struct LookupEndpoint: APIResource
     }
 }
 
+// Formats unparsed data into a Recipe object
 func formatResponse(unparsedData: [String:Any]) -> Recipe?
 {
     let detailResponse = unparsedData["meals"] as? [Any]
@@ -63,6 +69,7 @@ func formatResponse(unparsedData: [String:Any]) -> Recipe?
         return nil
     }
     
+    // Extracts instructions from the recipeInfo
     var instructions: [String]?
     if let instructionsString = recipeInfo["strInstructions"] as? String
     {
@@ -73,35 +80,39 @@ func formatResponse(unparsedData: [String:Any]) -> Recipe?
             return String(item)}
         }
     
-        var ingredients = [String:(name: String, measurement: String)]()
-        for (key,value) in recipeInfo
-        {
-            let ingredientPrefix = "strIngredient"
-            let measurementPrefix = "strMeasure"
-        
-            guard let value = value as? String else {continue}
-            let validString = !value.trimmingCharacters(in: .whitespaces).isEmpty
-            var keyString = key
-            if keyString.hasPrefix(ingredientPrefix) && validString
-            {
-                keyString = String(keyString.dropFirst(ingredientPrefix.count))
-                ingredients[keyString, default: ("","")].name = value
-            } else if keyString.hasPrefix(measurementPrefix) && validString
-            {
-                keyString = String(keyString.dropFirst(measurementPrefix.count))
-                ingredients[keyString, default: ("","")].measurement = value
-            }
-        }
+    // Extracts ingredients from the recipeInfo
+    var ingredients = [String:(name: String, measurement: String)]()
+    for (key,value) in recipeInfo
+    {
+        let ingredientPrefix = "strIngredient"
+        let measurementPrefix = "strMeasure"
     
-        if ingredients.isEmpty || instructions == nil
+        guard let value = value as? String else {continue}
+        let validString = !value.trimmingCharacters(in: .whitespaces).isEmpty
+        var keyString = key
+        if keyString.hasPrefix(ingredientPrefix) && validString
         {
-            return nil
-        }
-        var ingredientsDictionary = [String:String]()
-        for (key,value) in ingredients.values
+            keyString = String(keyString.dropFirst(ingredientPrefix.count))
+            ingredients[keyString, default: ("","")].name = value
+        } else if keyString.hasPrefix(measurementPrefix) && validString
         {
-            ingredientsDictionary["\(key)"] = "\(value)"
+            keyString = String(keyString.dropFirst(measurementPrefix.count))
+            ingredients[keyString, default: ("","")].measurement = value
         }
+    }
+    
+    // Checks that both instructions and ingredients have been extracted correctly
+    if ingredients.isEmpty || instructions == nil
+    {
+        return nil
+    }
+    
+    // Converts the ingredients into a dictionary of String keys and String values
+    var ingredientsDictionary = [String:String]()
+    for (key,value) in ingredients.values
+    {
+        ingredientsDictionary["\(key)"] = "\(value)"
+    }
     
         return Recipe(name: name, instructions: instructions, ingredients: ingredientsDictionary)
 }
